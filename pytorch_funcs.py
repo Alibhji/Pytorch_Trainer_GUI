@@ -19,6 +19,10 @@ import os
 import copy
 
 
+from PyQt5 import  QtGui
+
+
+
 
 # Top level data directory. Here we assume the format of the directory conforms
 #   to the ImageFolder structure
@@ -44,6 +48,7 @@ feature_extract = True
 
 def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_inception=False):
     since = time.time()
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     val_acc_history = []
 
@@ -112,7 +117,7 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
             if phase == 'val':
                 val_acc_history.append(epoch_acc)
 
-        print()
+            QtGui.QGuiApplication.processEvents()
 
     time_elapsed = time.time() - since
     print('Training complete in {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
@@ -202,6 +207,27 @@ def initialize_model(model_name, num_classes, feature_extract, use_pretrained=Tr
     return model_ft, input_size
 
 
+def Data_Augmrntation_Normalization(input_size):
+    # Data augmentation and normalization for training
+    # Just normalization for validation
+    data_transforms = {
+        'train': transforms.Compose([
+            transforms.RandomResizedCrop(input_size),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        ]),
+        'val': transforms.Compose([
+            transforms.Resize(input_size),
+            transforms.CenterCrop(input_size),
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        ]),
+    }
+
+    return data_transforms
+
+
 if __name__ == '__main__':
     print("PyTorch Version: ", torch.__version__)
     print("Torchvision Version: ", torchvision.__version__)
@@ -210,6 +236,8 @@ if __name__ == '__main__':
 
     # Print the model we just instantiated
     print(model_ft)
+
+
 
 
 
