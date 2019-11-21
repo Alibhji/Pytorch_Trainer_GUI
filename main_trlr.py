@@ -109,7 +109,7 @@ class AppWindow(QMainWindow):
 
         # Train and evaluate
         model_ft, hist = TR.train_model(model_ft, dataloaders_dict, criterion, optimizer_ft, num_epochs=int(cfg['num_epochs']),
-                                     is_inception=(cfg['num_epochs'] == "model_name"))
+                                     is_inception=(cfg['model_name'] == "inception"))
 
 if __name__ == '__main__':
 
