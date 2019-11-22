@@ -1,0 +1,14 @@
+model_code: AAA_001
+model_code: AAA_001
+
+model_layers:
+            - tset:nn.Linear( 2, 100)
+            - nn.Linear( 100, 100)
+            - nn.Linear( 100, 300)
+            - nn.Linear( 300, 100)
+            - nn.Linear( 100, 100)
+            - nn.Linear( 100, 2)
+
+
+
+

@@ -34,6 +34,7 @@ class AppWindow(QMainWindow):
 
     def Ui_config_(self):
         self.ui.btn_train.clicked.connect(self.btn_train)
+        self.ui.btn_designNet.clicked.connect(self.btn_design_model)
 
         self.ui.cmbox_data_dir.addItems(self.cfg['data_dir'])
         self.ui.cmbox_model_select.addItems(self.cfg['model_names'])
@@ -44,7 +45,10 @@ class AppWindow(QMainWindow):
         self.ui.in_batch_size.setText(str(self.cfg['batch_size']))
         self.ui.in_epoches.setText(str(self.cfg['num_epochs']))
 
-
+    def btn_design_model(self):
+        model_cfg=util.import_yaml('.\models\model_001.yml')
+        net=TR.AliNet(model_cfg['model_layers'])
+        util.Qlogging(str(net.modules()),'r')
 
     def update_cfg(self):
         self.new_cfg={}
@@ -68,7 +72,6 @@ class AppWindow(QMainWindow):
                                                    cfg['feature_extract'],
                                                    use_pretrained=cfg['use_pretrained'])
         util.Qlogging(self.ui.textBrowser, 'The Model is loaded\n', "r")
-        print(model_ft)
 
         data_transforms = TR.Data_Augmrntation_Normalization(input_size)
 
@@ -84,6 +87,17 @@ class AppWindow(QMainWindow):
         #
         # # Detect if we have a GPU available
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+        # KK = TR.AliNet(2)
+        # model_ft= nn.Sequential(model_ft,nn.Linear(2,200),
+        #                         nn.Linear(200,2),KK)
+
+
+
+
+
+        print(model_ft)
+
 
         # Send the model to GPU
         model_ft = model_ft.to(device)

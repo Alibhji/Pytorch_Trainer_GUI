@@ -1,37 +1,219 @@
+from PyQt5 import QtWidgets, QtGui, QtCore
+from PyQt5.QtCore import pyqtSignal
 import sys
-from PyQt5 import QtCore, QtWidgets
+import time
 
+from http.client import HTTPSConnection
+from bs4 import BeautifulSoup
 
-class EmbTerminal(QtWidgets.QWidget):
+font_but = QtGui.QFont()
+font_but.setFamily("Segoe UI Symbol")
+font_but.setPointSize(10)
+font_but.setWeight(95)
+
+# class QThread1(QtCore.QThread):
+#     sig1 = pyqtSignal(str)
+#     def __init__(self, parent=None):
+#         QtCore.QThread.__init__(self, parent)
+#     def on_source(self, lineftxt):
+#         self.source_txt = lineftxt
+#     def run(self):
+#         self.running = True
+#         while self.running:
+#             self.sig1.emit(self.source_txt)
+#             time.sleep(1)
+
+class QThread1(QtCore.QThread):
+    sig1 = pyqtSignal(str, int, int)
     def __init__(self, parent=None):
-        super(EmbTerminal, self).__init__(parent)
-        self.process = QtCore.QProcess(self)
-        self.terminal = QtWidgets.QWidget(self)
-        layout = QtWidgets.QVBoxLayout(self)
-        layout.addWidget(self.terminal)
-        # Works also with urxvt:
-        self.process.start('urxvt',['-embed', str(int(self.winId()))])
-        self.setFixedSize(640, 480)
+        QtCore.QThread.__init__(self, parent)
+    def on_source(self, lineftxt):
+        self.source_txt = lineftxt
+    def run(self):
+        self.running = True
+        while self.running:
+            try:
+                conn = HTTPSConnection(self.source_txt)
+                conn.request('GET', "/")
+                req = conn.getresponse()
+                page = req.read().decode('utf-8')
+                bs = BeautifulSoup(page, 'html.parser')
+                links = bs.find_all('a')
+                l = len(links)
+                for i in range(0, l):
+                    if self.running is True:
+                        self.sig1.emit(str(links[i]), i, l)
+                        time.sleep(1.5)
+            except Exception as err:
+                self.sig1.emit(str(err), 0, 1)
 
 
-class mainWindow(QtWidgets.QMainWindow):
+
+
+
+
+class PushBut1(QtWidgets.QPushButton):
+
     def __init__(self, parent=None):
-        super(mainWindow, self).__init__(parent)
+        super(PushBut1, self).__init__(parent)
+        self.setMouseTracking(True)
+        self.setStyleSheet("margin: 1px; padding: 7px; \
+        background - color: rgba(1, 255, 255, 100);  \
+        color: rgba(0, 190, 255, 255); \
+        border - style: solid; \
+        border - radius: 3 \
+        px; \
+        border - width: 0.5 \
+        px; \
+        border - color: rgba(127, 127, 255, 255); \
+        ")
 
-        central_widget = QtWidgets.QWidget()
-        lay = QtWidgets.QVBoxLayout(central_widget)
-        self.setCentralWidget(central_widget)
+    def enterEvent(self, event):
+        if self.isEnabled() is True:
+            self.setStyleSheet("margin: 1px; padding: 7px;\
+            background - color: \
+                rgba(1, 255, 255, 100);\
+            color: rgba(0, 230, 255, 255); \
+            border - style: solid; \
+            border - radius: 3 \
+            px; \
+            border - width: 0.5 \
+            px; \
+            border - color: rgba(0, 230, 255, 255); \
+            ")
+            if self.isEnabled() is False:
+                self.setStyleSheet("margin: 1px; padding: 7px; \
+            background - color: \
+                rgba(1, 255, 255, 100); \
+            color: rgba(0, 190, 255, 255); \
+            border - style: solid; \
+            border - radius: 3 \
+            px; \
+            border - width: 0.5 \
+            px; \
+            border - color: \
+                rgba(127, 127, 255, 255); \
+            ")
 
-        tab_widget = QtWidgets.QTabWidget()
-        lay.addWidget(tab_widget)
+    def leaveEvent(self, event):
+        self.setStyleSheet("margin: 1px; padding: 7px; \
+        background - color: rgba(1, 255, 255, 100); \
+        color: rgba(0, 190, 255, 255); \
+        border - style: solid; \
+        border - radius: 3 \
+        px; \
+        border - width: 0.5 \
+        px; \
+        border - color: rgba(127, 127, 255, 255); \
+        ")
 
-        tab_widget.addTab(EmbTerminal(), "EmbTerminal")
-        tab_widget.addTab(QtWidgets.QTextEdit(), "QTextEdit")
-        tab_widget.addTab(QtWidgets.QMdiArea(), "QMdiArea")
+class QthreadApp(QtWidgets.QWidget):
+    sig = pyqtSignal(str)
+
+    def __init__(self, parent=None):
+        QtWidgets.QWidget.__init__(self, parent)
+        self.setWindowTitle("QThread Application")
+        self.setWindowIcon(QtGui.QIcon("Path/to/image/file.png"))
+        self.setMinimumWidth(resolution.width() / 3)
+        self.setMinimumHeight(resolution.height() / 1.5)
+        self.setStyleSheet("QWidget { \
+        background - color: rgba(0, 41, 59, 255);} \
+        QScrollBar: horizontal \
+        {width: 1px; \
+        height: 1 \
+        px; \
+        background - color: rgba(0, 41, 59, 255);} \
+        QScrollBar: vertical \
+        {width: 1px; \
+        height: 1 \
+        px; \
+        background - color: rgba(0, 41, 59, 255);}")
+
+        self.linef = QtWidgets.QLineEdit(self)
+        self.linef.setPlaceholderText("Connect to...")
+        self.linef.setStyleSheet("margin: 1px; padding: 7px; \
+        background - color: \
+            rgba(0, 255, 255, 100); \
+        color: rgba(0, 190, 255, 255); \
+        border - style: solid; \
+        border - radius: 3 \
+        px;\
+        border - width: 0.5 \
+        px; \
+        border - color: \
+            rgba(0, 140, 255, 255); \
+        ")
+        self.textf = QtWidgets.QTextEdit(self)
+        self.textf.setPlaceholderText("Results...")
+        self.textf.setStyleSheet("margin: 1px; padding: 7px; \
+        background - color: \
+            rgba(0, 255, 255, 100); \
+        color: rgba(0, 190, 255, 255); \
+        border - style: solid; \
+        border - radius: 3 \
+        px; \
+        border - width: 0.5 \
+        px; \
+        border - color: \
+            rgba(0, 140, 255, 255); \
+        ")
+        self.but1 = PushBut1(self)
+        self.but1.setText("⯈")
+        self.but1.setFixedWidth(72)
+        self.but1.setFont(font_but)
+        self.but2 = PushBut1(self)
+        self.but2.setText("⯀")
+        self.but2.setFixedWidth(72)
+        self.but2.setFont(font_but)
+        self.grid1 = QtWidgets.QGridLayout()
+        self.grid1.addWidget(self.linef, 0, 0, 1, 12)
+        self.grid1.addWidget(self.but1, 0, 12, 1, 1)
+        self.grid1.addWidget(self.but2, 0, 13, 1, 1)
+        self.grid1.addWidget(self.textf, 1, 0, 13, 14)
+        self.grid1.setContentsMargins(7, 7, 7, 7)
+        self.setLayout(self.grid1)
+
+        self.but1.clicked.connect(self.on_but1)
+        self.but2.clicked.connect(self.on_but2)
+
+    def on_but1(self):
+        self.textf.clear()
+        lineftxt = self.linef.text()
+        self.thread1 = QThread1()
+        self.sig.connect(self.thread1.on_source)
+        self.sig.emit(lineftxt)
+        self.thread1.start()
+        self.thread1.sig1.connect(self.on_info)
+        self.but1.setEnabled(False)
+
+    # def on_info(self, info):
+    #     self.textf.append(str(info))
+    def on_info(self, info, i, l):
+        if i == l - 1:
+            self.textf.clear()
+            self.textf.append(str(info))
+        else:
+            self.textf.append(str(info))
+
+    def on_but2(self):
+        try:
+            self.thread1.running = False
+            time.sleep(2)
+            self.but1.setEnabled(True)
+        except:
+            pass
 
 
 if __name__ == "__main__":
+    import sys
     app = QtWidgets.QApplication(sys.argv)
-    main = mainWindow()
-    main.show()
+    desktop = QtWidgets.QApplication.desktop()
+    resolution = desktop.availableGeometry()
+    myapp = QthreadApp()
+    myapp.setWindowOpacity(0.95)
+    myapp.show()
+    myapp.move(resolution.center() - myapp.rect().center())
     sys.exit(app.exec_())
+else:
+    desktop = QtWidgets.QApplication.desktop()
+    resolution = desktop.availableGeometry()
