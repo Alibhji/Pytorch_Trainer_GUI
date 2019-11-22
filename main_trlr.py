@@ -16,6 +16,75 @@ import torch.nn as nn
 import torch.optim as optim
 
 
+#multi Thread programming
+from PyQt5.QtCore import  QObject ,pyqtSignal
+from PyQt5.QtCore import  QRunnable ,QThreadPool, pyqtSlot
+import traceback
+
+
+
+class WorkerSignals(QObject):
+    '''
+    Defines the signals available from a running worker thread.
+    Supported signals are:
+    finished
+        No data
+    error
+        `tuple` (exctype, value, traceback.format_exc() )
+    result
+        `object` data returned from processing, anything
+    progress
+        `int` indicating % progress
+
+    '''
+    finished = pyqtSignal()
+    error = pyqtSignal(tuple)
+    result = pyqtSignal(object)
+    progress = pyqtSignal(int)
+
+
+class Worker(QRunnable):
+    '''
+    Worker thread
+    Inherits from QRunnable to handler worker thread setup, signals and wrap-up.
+    :param callback: The function callback to run on this worker thread. Supplied args and
+                     kwargs will be passed through to the runner.
+    :type callback: function
+    :param args: Arguments to pass to the callback function
+    :param kwargs: Keywords to pass to the callback function
+    '''
+
+    def __init__(self, fn, *args, **kwargs):
+        super(Worker, self).__init__()
+
+        # Store constructor arguments (re-used for processing)
+        self.fn = fn
+        self.args = args
+        self.kwargs = kwargs
+        self.signals = WorkerSignals()
+
+        # Add the callback to our kwargs
+        # self.kwargs['progress_callback'] = self.signals.progress
+
+    @pyqtSlot()
+    def run(self):
+        '''
+        Initialise the runner function with passed args, kwargs.
+        '''
+
+        # Retrieve args/kwargs here; and fire processing using them
+        try:
+            result = self.fn(*self.args, **self.kwargs)
+        except:
+            traceback.print_exc()
+            exctype, value = sys.exc_info()[:2]
+            self.signals.error.emit((exctype, value, traceback.format_exc()))
+        else:
+            self.signals.result.emit(result)  # Return the result of the processing
+        finally:
+            self.signals.finished.emit()  # Done
+
+
 class AppWindow(QMainWindow):
     def __init__(self):
         super(AppWindow,self).__init__()
@@ -24,6 +93,9 @@ class AppWindow(QMainWindow):
         yaml=os.path.join(os.getcwd(),'config.yml')
         print(yaml)
         self.cfg=util.import_yaml(yaml)
+
+        self.threadpool = QThreadPool()
+        print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
 
         util.Qlogging(self.ui.textBrowser, 'The config File is loaded \n',"g")
         cfg_str=pprint.pformat(self.cfg)
@@ -122,8 +194,10 @@ class AppWindow(QMainWindow):
         criterion = nn.CrossEntropyLoss()
 
         # Train and evaluate
-        model_ft, hist = TR.train_model(model_ft, dataloaders_dict, criterion, optimizer_ft, num_epochs=int(cfg['num_epochs']),
-                                     is_inception=(cfg['model_name'] == "inception"))
+        # model_ft, hist = TR.train_model(model_ft, dataloaders_dict, criterion, optimizer_ft, num_epochs=int(cfg['num_epochs']),
+        #                              is_inception=(cfg['model_name'] == "inception"))
+        worker_train= Worker(TR.train_model,model_ft,dataloaders_dict,criterion,optimizer_ft, num_epochs=int(cfg['num_epochs']),is_inception=(cfg['model_name'] == "inception"))
+        self.threadpool.start(worker_train)
 
 if __name__ == '__main__':
 

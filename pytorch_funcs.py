@@ -24,6 +24,7 @@ from PyQt5 import  QtGui
 
 
 
+
 # Top level data directory. Here we assume the format of the directory conforms
 #   to the ImageFolder structure
 data_dir = "./data/hymenoptera_data"
@@ -159,6 +160,42 @@ def set_parameter_requires_grad(model, feature_extracting):
     if feature_extracting:
         for param in model.parameters():
             param.requires_grad = False
+
+# def add_ToplayersToModel(model_ft,top_model):
+#
+#     num_ftrs = model_ft.classifier[6].in_features
+#     model_ft.classifier[6]=nn.Linear(num_ftrs,num_classes)
+#     model_ft.classifier[6] = nn.Linear(num_classes, num_classes)
+#     model_ft.classifier[6] = nn.Linear(num_classes, num_classes)
+
+class Net(nn.Module):
+    def __init__(self, original_model):
+        super(Net, self).__init__()
+        self.pretrained = nn.Sequential(*list(original_model.children()))
+        # self.finetuned = nn.Sequential(
+        #     nn.Linear(2,2)
+        #     # nn.Linear(512 * 7 * 7, 4096),
+        #     # nn.ReLU(inplace=True),
+        #     # nn.Dropout(p=0.5),
+        #     # nn.Linear(4096, 4096),
+        #     # nn.ReLU(inplace=True),
+        #     # nn.Dropout(p=0.5),
+        #     # nn.Linear(4096, 120),
+        #     # nn.Softmax()
+        # )
+
+    def forward(self, x):
+        x = self.pretrained(x)
+        # x = x.view(x.size(0), -1)
+        # x = self.finetuned(x)
+        return x
+
+    def num_flat_features(self, x):
+        size = x.size()[1:]  # all dimensions except the batch dimension
+        num_features = 1
+        for s in size:
+            num_features *= s
+        return num_features
 
 
 def initialize_model(model_name, num_classes, feature_extract, use_pretrained=True):
