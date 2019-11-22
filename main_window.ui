@@ -18,7 +18,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>10</y>
+      <y>20</y>
       <width>491</width>
       <height>681</height>
      </rect>
@@ -150,12 +150,25 @@
      <rect>
       <x>550</x>
       <y>340</y>
-      <width>93</width>
+      <width>131</width>
       <height>28</height>
      </rect>
     </property>
     <property name="text">
      <string>Design AliNet</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="btn_model_eval">
+    <property name="geometry">
+     <rect>
+      <x>560</x>
+      <y>430</y>
+      <width>101</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Model Eval</string>
     </property>
    </widget>
   </widget>
@@ -165,7 +178,7 @@
      <x>0</x>
      <y>0</y>
      <width>1000</width>
-     <height>26</height>
+     <height>22</height>
     </rect>
    </property>
   </widget>

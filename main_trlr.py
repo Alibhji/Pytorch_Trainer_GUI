@@ -107,6 +107,7 @@ class AppWindow(QMainWindow):
     def Ui_config_(self):
         self.ui.btn_train.clicked.connect(self.btn_train)
         self.ui.btn_designNet.clicked.connect(self.btn_design_model)
+        self.ui.btn_model_eval.clicked.connect(self.on_btn_eval)
 
         self.ui.cmbox_data_dir.addItems(self.cfg['data_dir'])
         self.ui.cmbox_model_select.addItems(self.cfg['model_names'])
@@ -153,7 +154,7 @@ class AppWindow(QMainWindow):
         image_datasets = {x: datasets.ImageFolder(os.path.join(cfg['data_dir'], x), data_transforms[x]) for x in
                           ['train', 'val']}
         # # Create training and validation dataloaders
-        dataloaders_dict = {
+        self.dataloaders_dict = {
             x: torch.utils.data.DataLoader(image_datasets[x], batch_size=int(cfg['batch_size']), shuffle=True, num_workers=4) for x
             in ['train', 'val']}
         #
@@ -196,8 +197,28 @@ class AppWindow(QMainWindow):
         # Train and evaluate
         # model_ft, hist = TR.train_model(model_ft, dataloaders_dict, criterion, optimizer_ft, num_epochs=int(cfg['num_epochs']),
         #                              is_inception=(cfg['model_name'] == "inception"))
-        worker_train= Worker(TR.train_model,model_ft,dataloaders_dict,criterion,optimizer_ft, num_epochs=int(cfg['num_epochs']),is_inception=(cfg['model_name'] == "inception"))
+        worker_train= Worker(TR.train_model,model_ft,self.dataloaders_dict,criterion,optimizer_ft, num_epochs=int(cfg['num_epochs']),is_inception=(cfg['model_name'] == "inception"))
+        worker_train.signals.result.connect(self.on_Thread_resulat)
         self.threadpool.start(worker_train)
+
+    def on_Thread_resulat(self,model):
+        print("Thread has done.")
+        self.model=model[0]
+        print(model[0])
+
+    def on_btn_eval(self):
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.model.eval()
+        inputs , labels= next(iter(self.dataloaders_dict['val']))
+        print('Actual labels:\n',labels)
+        inputs = inputs.to(device)
+        labels = labels.to(device)
+
+        pred= self.model(inputs)
+        # pred.data.cpu().numpy()
+        print(pred.shape)
+        print('Predicted labels: \n', pred.data.cpu().numpy())
+
 
 if __name__ == '__main__':
 
